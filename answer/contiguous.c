@@ -49,7 +49,26 @@ void printSummary(int nSeg, int nProc, int segSize[], int segUsed[], int segStar
 /* First-Fit */
 void firstFit(int nSeg, int nProc, int segSize[], int segUsed[], int segStart[], AllocationInfo alloc[]) {
     printf("\n--- FIRST FIT ---\n");
-    //@TODO
+
+    int occupied[MAX] = {0};
+    for (int i = 0; i < nSeg; i++)
+        if (segUsed[i] > 0) occupied[i] = 1;
+
+    for (int i = 0; i < nProc; i++)
+        alloc[i].partition = -1;
+
+    for (int p = 0; p < nProc; p++) {
+        for (int s = 0; s < nSeg; s++) {
+            if (!occupied[s] && segSize[s] >= alloc[p].size) {
+                alloc[p].partition = s;
+                alloc[p].start = segStart[s];
+                alloc[p].end   = segStart[s] + alloc[p].size;
+                occupied[s] = 1;
+                segUsed[s] = alloc[p].size;
+                break;              // first-fit: stop at first suitable partition
+            }
+        }
+    }
 
     printSummary(nSeg, nProc, segSize, segUsed, segStart, occupied, alloc);
 }
@@ -57,8 +76,37 @@ void firstFit(int nSeg, int nProc, int segSize[], int segUsed[], int segStart[],
 /* Best-Fit */
 void bestFit(int nSeg, int nProc, int segSize[], int segUsed[], int segStart[], AllocationInfo alloc[]) {
     printf("\n--- BEST FIT ---\n");
-    //@TODO
-    
+
+    int occupied[MAX] = {0};
+    for (int i = 0; i < nSeg; i++)
+        if (segUsed[i] > 0) occupied[i] = 1;
+
+    for (int i = 0; i < nProc; i++)
+        alloc[i].partition = -1;
+
+    for (int p = 0; p < nProc; p++) {
+        int bestS   = -1;
+        int bestDiff = -1;
+
+        for (int s = 0; s < nSeg; s++) {
+            if (!occupied[s] && segSize[s] >= alloc[p].size) {
+                int diff = segSize[s] - alloc[p].size;
+                if (bestS == -1 || diff < bestDiff) {
+                    bestDiff = diff;
+                    bestS = s;
+                }
+            }
+        }
+
+        if (bestS != -1) {
+            alloc[p].partition = bestS;
+            alloc[p].start = segStart[bestS];
+            alloc[p].end   = segStart[bestS] + alloc[p].size;
+            occupied[bestS] = 1;
+            segUsed[bestS] = alloc[p].size;
+        }
+    }
+
     printSummary(nSeg, nProc, segSize, segUsed, segStart, occupied, alloc);
 }
 
@@ -131,4 +179,3 @@ int main(){
 
     return 0;
 }
-
